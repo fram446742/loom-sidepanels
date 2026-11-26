@@ -19,8 +19,8 @@ wayland-client = "0.31"
 anyhow = "1"
 calloop = "0.14"
 calloop-wayland-source = "0.4"
-loom-state = { path = "../loom-state" }
-niri-ipc = { path = "../niri-ipc" }
+loom-state = { git = "https://github.com/fram446742/loom-niri.git", branch = "main", package = "loom-state" }
+niri-ipc = { git = "https://github.com/fram446742/loom-niri.git", branch = "main", package = "niri-ipc" }
 zbus = "5"
 
 [workspace]
