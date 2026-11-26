@@ -1,0 +1,107 @@
+use anyhow::Result;
+
+use crate::Ctx;
+use crate::commands::reorder;
+use crate::config::Side;
+use crate::niri::NiriClient;
+use crate::state::save_state;
+
+pub fn toggle_visibility<C: NiriClient>(ctx: &mut Ctx<C>, side: Side) -> Result<()> {
+    ctx.config.require_enabled(side)?;
+    let panel_state = ctx.state.panel_mut(side);
+    panel_state.is_hidden = !panel_state.is_hidden;
+    save_state(&ctx.state, &ctx.cache_dir)?;
+    reorder(ctx)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use niri_ipc::{Action, PositionChange};
+    use tempfile::tempdir;
+
+    use super::*;
+    use crate::state::{AppState, PanelState, WindowState};
+    use crate::test_utils::{MockNiri, mock_config, mock_window};
+
+    #[test]
+    fn test_toggle_visibility_right() {
+        let temp_dir = tempdir().unwrap();
+        let win = mock_window(100, false, true, 1, Some((1.0, 2.0)));
+        let mock = MockNiri::new(vec![win]);
+
+        let state = AppState {
+            right: PanelState {
+                windows: vec![WindowState {
+                    id: 100,
+                    width: 300,
+                    height: 500,
+                    is_floating: true,
+                    position: None,
+                    cooldown_until: None,
+                    last_applied: None,
+                }],
+                is_hidden: false,
+                is_flipped: false,
+            },
+            ..Default::default()
+        };
+
+        let mut ctx = Ctx {
+            state,
+            config: mock_config(),
+            socket: mock,
+            cache_dir: temp_dir.path().to_path_buf(),
+        };
+
+        toggle_visibility(&mut ctx, Side::Right).expect("Toggle failed");
+        assert!(ctx.state.right.is_hidden);
+
+        // Screen 1920, peek 10 → hidden_x = 1910.
+        let actions = &ctx.socket.sent_actions;
+        assert!(actions.iter().any(|a| matches!(
+            a,
+            Action::MoveFloatingWindow {
+                id: Some(100),
+                x: PositionChange::SetFixed(1910.0),
+                ..
+            }
+        )));
+
+        ctx.socket.sent_actions.clear();
+        toggle_visibility(&mut ctx, Side::Right).expect("Toggle failed");
+        assert!(!ctx.state.right.is_hidden);
+
+        // Visible X = 1920 - 300 - 20 = 1600.
+        let actions = &ctx.socket.sent_actions;
+        assert!(actions.iter().any(|a| matches!(
+            a,
+            Action::MoveFloatingWindow {
+                id: Some(100),
+                x: PositionChange::SetFixed(1600.0),
+                ..
+            }
+        )));
+    }
+
+    #[test]
+    fn test_toggle_visibility_errors_on_disabled_side() {
+        // Given: the left panel is disabled in mock_config.
+        let temp_dir = tempdir().unwrap();
+        let mock = MockNiri::new(vec![]);
+        let mut ctx = Ctx {
+            state: AppState::default(),
+            config: mock_config(),
+            socket: mock,
+            cache_dir: temp_dir.path().to_path_buf(),
+        };
+
+        // When: we try to toggle visibility of the disabled left panel.
+        let result = toggle_visibility(&mut ctx, Side::Left);
+
+        // Then: error returned, panel state untouched, no socket actions sent.
+        assert!(result.is_err());
+        assert!(!ctx.state.left.is_hidden);
+        assert!(ctx.socket.sent_actions.is_empty());
+    }
+}

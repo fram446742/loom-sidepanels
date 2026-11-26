@@ -1,0 +1,81 @@
+# loom-sidepanels-stack configuration
+#
+# The tool supports two independent panels: a left panel and a right panel.
+# Each one has its own width, margins, peek behavior, and window rules.
+# Disable either by setting `enabled = false` in its section.
+
+# Vertical space niri's working area excludes from the output — typically
+# layer-shell bars (waybar, etc.) plus any user-configured struts in your
+# niri config. loom-sidepanels-stack can't detect these dynamically, so set them
+# manually here. Defaults to 0 / 0 if omitted.
+# [bars]
+# top = 30
+# bottom = 0
+
+# How long the daemon should ignore drift checks after a reorder, so niri's
+# own animation frames aren't mistaken for the user dragging a window. Set
+# to roughly the duration of niri's longest window-move animation; tune up
+# if you've slowed niri's animations down. Default 500.
+# [animation]
+# cooldown_ms = 500
+
+[left]
+enabled = false
+# Panel width in pixels.
+width = 400
+# Deprecated: ignored since windows in a panel now split the available vertical
+# space equally. Kept in the schema for forward compatibility.
+height = 335
+# Gap between stacked windows, in pixels.
+gap = 10
+# How much of the panel peeks in from the edge when hidden, in pixels.
+peek = 10
+# How much of the panel is visible when a panel window is focused. Defaults to `peek`.
+# Set equal to `width + margins.left` to make focused windows fully unhide.
+focus_peek = 50
+# Whether the panel follows you when you switch workspaces.
+sticky = false
+# Optional managed-strut base value, in pixels. When set, loom-sidepanels-stack
+# keeps `layout.struts.left` in your `niri/config.kdl` in sync with this
+# panel's occupancy (empty panel → `strut`; non-empty → `strut + width`).
+# Omit to leave struts on this side untouched. Negative values are
+# allowed (niri permits them — they extend the working area past the
+# edge). Comment out to disable managed struts on this side.
+# strut = 20
+
+[left.margins]
+top = 50
+right = 10
+left = 10
+bottom = 10
+
+[right]
+enabled = true
+width = 400
+height = 335
+gap = 10
+peek = 10
+focus_peek = 50
+sticky = false
+# strut = 20
+
+[right.margins]
+top = 50
+right = 10
+left = 10
+bottom = 10
+
+# Window rules. Rules are global; match an `app_id` and/or `title` regex and
+# override any of width/height/peek/focus_peek. If `auto_add = true`, matching
+# windows are added to the panel indicated by `side` (or the right panel if
+# `side` is omitted and the right panel is enabled).
+#
+# [[window_rule]]
+# app_id = "firefox"
+# title = "^Picture-in-Picture$"
+# width = 700
+# height = 400
+# focus_peek = 710
+# peek = 10
+# auto_add = true
+# side = "right"

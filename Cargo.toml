@@ -1,0 +1,26 @@
+[package]
+name = "loom-sidepanels"
+version = "0.2.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+rust-version = "1.95"
+
+[[bin]]
+name = "loom-sidepanels"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+libc = "0.2"
+cairo-rs = { version = "0.22", features = ["png"] }
+smithay-client-toolkit = "0.21"
+wayland-client = "0.31"
+anyhow = "1"
+calloop = "0.14"
+calloop-wayland-source = "0.4"
+loom-state = { path = "../loom-state" }
+niri-ipc = { path = "../niri-ipc" }
+zbus = "5"
+
+[workspace]
